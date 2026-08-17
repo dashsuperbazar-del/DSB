@@ -1,0 +1,10 @@
+{
+  "name": "Dash Super Bazar",
+  "short_name": "Dash Bazar",
+  "start_url": "shop.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0a7d3c",
+  "icons": []
+}
