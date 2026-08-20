@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a7d3c">
+<title>Dash Super Bazar</title>
+<link rel="manifest" href="shop-manifest.json">
+<link rel="icon" href="shop-icon-192.png">
+<link rel="apple-touch-icon" href="shop-icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Dash Bazar">
+<meta name="description" content="Order groceries from Dash Super Bazar.">
+<style>
+:root{
+  --accent:#0a7d3c; --accent-soft:#e8f5ee; --accent-press:#08652f;
+  --bg:#ffffff; --surface:#ffffff; --surface2:#f6f7f8;
+  --text:#111418; --text2:#5c6570; --text3:#8a929b;
+  --line:#e6e8eb; --danger:#b3261e; --radius:12px;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#111418; --surface:#181c21; --surface2:#1f242a;
+    --text:#eef1f4; --text2:#a8b1ba; --text3:#7c858e; --line:#2a3037;
+    --accent-soft:#12301f; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+/* ---------- header ---------- */
+header{
+  position:sticky; top:0; z-index:20; background:var(--surface);
+  border-bottom:1px solid var(--line); padding:10px 12px 8px;
+  padding-top:calc(10px + env(safe-area-inset-top));
+}
+.brandrow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.brand{font-size:18px;font-weight:800;letter-spacing:-.3px;flex:1}
+.brand span{color:var(--accent)}
+.status{font-size:11px;color:var(--text3);white-space:nowrap}
+.searchwrap{position:relative}
+#q{
+  width:100%; padding:12px 40px 12px 38px; font-size:15px;
+  border:1px solid var(--line); border-radius:10px;
+  background:var(--surface2); color:var(--text);
+}
+#q:focus{outline:2px solid var(--accent);outline-offset:-1px;background:var(--surface)}
+.sicon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:15px}
+#qclear{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  border:0;background:transparent;color:var(--text3);font-size:20px;
+  width:32px;height:32px;border-radius:50%;display:none;
+}
+/* ---------- category chips ---------- */
+#cats{
+  display:flex;gap:8px;overflow-x:auto;padding:10px 12px;
+  scrollbar-width:none; background:var(--bg);
+  position:sticky; top:0; z-index:15;
+}
+#cats::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;
+  border:1px solid var(--line);background:var(--surface);color:var(--text2);
+  white-space:nowrap;cursor:pointer;
+}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+/* ---------- grid ---------- */
+#grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:4px 12px 32px;
+}
+@media(min-width:560px){#grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:820px){#grid{grid-template-columns:repeat(4,1fr);max-width:1100px;margin:0 auto}}
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;display:flex;flex-direction:column;
+}
+.thumb{
+  position:relative;width:100%;aspect-ratio:1/1;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ph{font-size:26px;font-weight:800;color:#fff;letter-spacing:-1px}
+.body{padding:9px 10px 10px;display:flex;flex-direction:column;flex:1;gap:2px}
+.nm{
+  font-size:13px;font-weight:600;line-height:1.3;min-height:34px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.un{font-size:11px;color:var(--text3)}
+.prow{display:flex;align-items:center;gap:8px;margin-top:6px}
+.pr{font-size:16px;font-weight:800;flex:1}
+.add{
+  min-width:62px;min-height:34px;padding:0 12px;border:1px solid var(--accent);
+  border-radius:8px;background:var(--accent-soft);color:var(--accent);
+  font-size:13px;font-weight:800;cursor:pointer;
+}
+.add:active{background:var(--accent);color:#fff}
+.oos .thumb{opacity:.4}
+.oos .nm,.oos .pr{color:var(--text3)}
+.oosbadge{
+  position:absolute;inset:auto 0 0 0;background:rgba(0,0,0,.62);color:#fff;
+  font-size:11px;font-weight:700;text-align:center;padding:4px;
+}
+.add[disabled]{background:var(--surface2);border-color:var(--line);color:var(--text3);cursor:default}
+/* ---------- skeleton ---------- */
+.sk{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.sk .b{background:var(--surface2);animation:pulse 1.2s ease-in-out infinite}
+.sk .b1{width:100%;aspect-ratio:1/1}
+.sk .b2{height:12px;margin:10px 10px 6px;border-radius:4px}
+.sk .b3{height:12px;width:60%;margin:0 10px 12px;border-radius:4px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+/* ---------- checkout ---------- */
+#cowrap{position:fixed;inset:0;z-index:60;display:none}
+#cobg{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+#co{position:absolute;left:0;right:0;bottom:0;max-height:92vh;display:flex;flex-direction:column;
+   background:var(--bg);border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom)}
+#cobody{overflow-y:auto;padding:6px 14px 4px;flex:1}
+.fg{margin:10px 0}
+.fg label{display:block;font-size:12px;font-weight:700;color:var(--text2);margin-bottom:4px}
+.fg input,.fg textarea,.fg select{
+  width:100%;padding:12px;font-size:15px;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--text);font-family:inherit}
+.fg input:focus,.fg textarea:focus,.fg select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.fg .err{font-size:11px;color:var(--danger);font-weight:600;margin-top:3px;display:none}
+.fg.bad input,.fg.bad textarea{border-color:var(--danger)}
+.fg.bad .err{display:block}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+#coerr{margin:6px 14px 0;padding:11px;border-radius:10px;background:#fdeceb;color:var(--danger);
+  font-size:13px;font-weight:600;display:none}
+.osum{background:var(--surface2);border-radius:10px;padding:10px 12px;margin-top:6px;font-size:13px}
+/* ---------- confirmation ---------- */
+#okwrap{position:fixed;inset:0;z-index:70;display:none;background:var(--bg);overflow-y:auto}
+#okwrap .in{max-width:520px;margin:0 auto;padding:36px 20px calc(28px + env(safe-area-inset-bottom))}
+.tick{width:64px;height:64px;border-radius:50%;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px}
+.oid{font-size:22px;font-weight:800;text-align:center;letter-spacing:.5px}
+.osub{text-align:center;color:var(--text2);font-size:14px;margin-top:4px}
+.tbox{background:var(--surface2);border:1px solid var(--line);border-radius:10px;
+  padding:12px;margin-top:18px;font-size:12px;word-break:break-all;color:var(--text2)}
+.brow{display:flex;gap:8px;margin-top:10px}
+.brow button{flex:1;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;
+  border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent)}
+.brow button.solid{background:var(--accent);color:#fff}
+/* ---------- order status (E5) ---------- */
+#trwrap{position:fixed;inset:0;z-index:80;display:none;background:var(--bg);overflow-y:auto}
+#trwrap .in{max-width:520px;margin:0 auto;padding:20px 18px calc(28px + env(safe-area-inset-bottom))}
+.trhead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.trhead .t{flex:1;font-size:17px;font-weight:800}
+.trid{font-size:21px;font-weight:800;letter-spacing:.4px}
+.trmeta{font-size:13px;color:var(--text2);margin-top:2px}
+.pill{display:inline-block;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:800;margin-top:10px}
+.pill.live{background:var(--accent-soft);color:var(--accent)}
+.pill.dead{background:#fdeceb;color:var(--danger)}
+.steps{margin:20px 0 6px;padding-left:6px}
+.st{display:flex;gap:12px;align-items:flex-start;position:relative;padding-bottom:18px}
+.st:last-child{padding-bottom:0}
+.st .dot{width:20px;height:20px;border-radius:50%;flex:0 0 20px;margin-top:1px;
+  border:2px solid var(--line);background:var(--surface);display:flex;align-items:center;
+  justify-content:center;font-size:11px;color:#fff;font-weight:800}
+.st.done .dot{background:var(--accent);border-color:var(--accent)}
+.st.now .dot{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.st .bar{position:absolute;left:9px;top:22px;bottom:0;width:2px;background:var(--line)}
+.st.done .bar{background:var(--accent)}
+.st:last-child .bar{display:none}
+.st .lbl{font-size:14px;font-weight:700;color:var(--text3)}
+.st.done .lbl,.st.now .lbl{color:var(--text)}
+.trsec{margin-top:22px}
+.trsec h3{font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.5px;margin:0 0 8px}
+.trline{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.trline .n{flex:1}
+.trline .q{color:var(--text3)}
+.trline .a{font-weight:700;min-width:64px;text-align:right}
+.callbtn{display:block;text-align:center;margin-top:16px;padding:14px;border-radius:12px;
+  background:var(--accent);color:#fff;font-size:15px;font-weight:800;text-decoration:none}
+.trerr{padding:48px 20px;text-align:center;color:var(--text2)}
+/* ---------- empty / error ---------- */
+.msg{padding:48px 24px;text-align:center;color:var(--text2);grid-column:1/-1}
+.msg .big{font-size:34px;margin-bottom:10px}
+.msg .t{font-weight:700;color:var(--text);margin-bottom:4px}
+/* ---------- S6a home shelves ---------- */
+#banner{display:none;margin:10px 12px 2px;padding:13px 15px;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),#0d9b4d);color:#fff;
+  font-size:14px;font-weight:700;line-height:1.35}
+.shelf{margin-top:18px}
+.shelfhead{display:flex;align-items:baseline;gap:8px;padding:0 12px 8px}
+.shelfhead h2{margin:0;font-size:16px;font-weight:800;letter-spacing:-.3px;flex:1}
+.shelfhead button{border:0;background:none;color:var(--accent);font-size:13px;
+  font-weight:700;cursor:pointer;padding:0}
+.rail{display:flex;gap:10px;overflow-x:auto;padding:2px 12px 4px;scroll-snap-type:x proximity}
+.rail::-webkit-scrollbar{display:none}
+.rail{scrollbar-width:none}
+.rail .card{flex:0 0 44%;max-width:180px;scroll-snap-align:start}
+@media(min-width:560px){.rail .card{flex:0 0 30%}}
+@media(min-width:820px){.rail .card{flex:0 0 22%}}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px}
+@media(min-width:560px){.tiles{grid-template-columns:repeat(6,1fr)}}
+.tile{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;
+  background:none;cursor:pointer;padding:0;color:var(--text)}
+.tiledot{width:100%;aspect-ratio:1/1;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;font-size:20px;font-weight:800;color:#fff;overflow:hidden}
+.tiledot img{width:100%;height:100%;object-fit:cover}
+.tile span{font-size:11px;font-weight:600;line-height:1.2;text-align:center;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.secttl{font-size:12px;font-weight:800;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.6px;padding:16px 12px 0}
+/* ---------- S8 shop info ---------- */
+#iwrap{position:fixed;inset:0;z-index:59;display:none;background:var(--bg);overflow-y:auto}
+#iwrap .in{max-width:560px;margin:0 auto;padding:0 16px calc(28px + env(safe-area-inset-bottom))}
+.inforow{padding:14px 0;border-bottom:1px solid var(--line)}
+.infolbl{font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.infoval{font-size:15px;margin-top:5px;line-height:1.45;white-space:pre-wrap}
+.infolink{display:block;text-align:center;margin-top:16px;padding:14px;border-radius:12px;
+  background:var(--accent);color:#fff;font-size:15px;font-weight:800;text-decoration:none}
+.infolink.ghost{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+.openpill{display:inline-block;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:800}
+.openpill.on{background:var(--accent-soft);color:var(--accent)}
+.openpill.off{background:#fdeceb;color:var(--danger)}
+/* ---------- S7 my orders ---------- */
+#hdrbtns{display:flex;gap:6px;align-items:center}
+.iconbtn{position:relative;border:1px solid var(--line);background:var(--surface);
+  color:var(--text2);border-radius:9px;width:36px;height:36px;font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0}
+.iconbtn .dot{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:8px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;
+  line-height:16px;text-align:center}
+#owrap{position:fixed;inset:0;z-index:58;display:none;background:var(--bg);overflow-y:auto}
+#owrap .in{max-width:560px;margin:0 auto;padding:0 14px calc(24px + env(safe-area-inset-bottom))}
+.ordcard{border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:10px;
+  background:var(--surface)}
+.ordtop{display:flex;align-items:baseline;gap:8px}
+.ordid{font-size:13px;font-weight:800;flex:1}
+.ordwhen{font-size:11px;color:var(--text3)}
+.ordstat{display:inline-block;margin-top:6px;padding:4px 10px;border-radius:999px;
+  font-size:11px;font-weight:800;background:var(--accent-soft);color:var(--accent)}
+.ordstat.dead{background:#fdeceb;color:var(--danger)}
+.ordsum{font-size:12px;color:var(--text2);margin-top:8px}
+.ordbtns{display:flex;gap:8px;margin-top:11px}
+.ordbtns button{flex:1;padding:10px;border-radius:9px;font-size:13px;font-weight:700;
+  cursor:pointer;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent)}
+.ordbtns button.solid{background:var(--accent);color:#fff}
+/* ---------- item detail sheet ---------- */
+#dwrap{position:fixed;inset:0;z-index:55;display:none}
+#dbg{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+#dsheet{position:absolute;left:0;right:0;bottom:0;max-height:86vh;overflow-y:auto;
+  background:var(--bg);border-radius:16px 16px 0 0;padding-bottom:env(safe-area-inset-bottom)}
+#dimg{width:100%;aspect-ratio:1/1;max-height:44vh;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+#dimg img{width:100%;height:100%;object-fit:cover}
+#dimg .ph{font-size:56px}
+.dbody{padding:16px 16px 8px}
+.dname{font-size:19px;font-weight:800;line-height:1.25}
+.dunit{font-size:13px;color:var(--text3);margin-top:3px}
+.dprice{font-size:24px;font-weight:800;margin-top:10px}
+.ddesc{font-size:14px;color:var(--text2);line-height:1.5;margin-top:12px;white-space:pre-wrap}
+.dcat{display:inline-block;margin-top:10px;padding:5px 11px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:700}
+.dact{padding:8px 16px calc(16px + env(safe-area-inset-bottom));display:flex;gap:10px}
+.dact .step{flex:1;justify-content:space-between;min-height:50px}
+.dact .step button{width:52px;min-height:50px;font-size:22px}
+.dact .add{flex:1;min-height:50px;font-size:16px;border-radius:10px}
+/* ---------- stepper ---------- */
+.step{display:flex;align-items:center;border:1px solid var(--accent);border-radius:8px;overflow:hidden;min-height:34px}
+.step button{width:30px;min-height:34px;border:0;background:var(--accent-soft);color:var(--accent);font-size:18px;font-weight:800;cursor:pointer;line-height:1}
+.step button:active{background:var(--accent);color:#fff}
+.step .n{min-width:26px;text-align:center;font-size:13px;font-weight:800;color:var(--accent)}
+/* ---------- cart bar + sheet ---------- */
+#cartbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;display:none;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:var(--accent);color:#fff;align-items:center;gap:12px;cursor:pointer;
+  box-shadow:0 -2px 14px rgba(0,0,0,.18);
+}
+#cartbar .cb1{flex:1;font-size:13px;font-weight:600;opacity:.92}
+#cartbar .cb2{font-size:16px;font-weight:800}
+#sheetwrap{position:fixed;inset:0;z-index:50;display:none}
+#sheetbg{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+#sheet{
+  position:absolute;left:0;right:0;bottom:0;max-height:88vh;display:flex;flex-direction:column;
+  background:var(--bg);border-radius:16px 16px 0 0;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.shead{display:flex;align-items:center;gap:10px;padding:14px 14px 8px;border-bottom:1px solid var(--line)}
+.shead .t{flex:1;font-size:17px;font-weight:800}
+.xbtn{border:0;background:transparent;color:var(--text2);font-size:26px;width:36px;height:36px;cursor:pointer}
+#slines{overflow-y:auto;padding:6px 14px;flex:1}
+.line{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.line .ln{flex:1;min-width:0}
+.line .lnm{font-size:13px;font-weight:600;line-height:1.3}
+.line .lsub{font-size:11px;color:var(--text3);margin-top:2px}
+.line .lt{font-size:13px;font-weight:800;min-width:64px;text-align:right}
+.line.bad{opacity:.75}
+.line.bad .lnm{color:var(--danger)}
+.warn{font-size:11px;color:var(--danger);margin-top:2px;font-weight:600}
+.ftoggle{display:flex;gap:8px;padding:10px 14px 2px}
+.ftoggle button{
+  flex:1;padding:11px;border-radius:10px;border:1px solid var(--line);
+  background:var(--surface);color:var(--text2);font-size:14px;font-weight:700;cursor:pointer}
+.ftoggle button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.totals{padding:10px 14px 4px;font-size:13px}
+.trow{display:flex;justify-content:space-between;padding:3px 0;color:var(--text2)}
+.trow.grand{font-size:17px;font-weight:800;color:var(--text);padding-top:8px;margin-top:6px;border-top:1px solid var(--line)}
+.hint{font-size:12px;color:var(--accent);font-weight:600;padding:2px 14px 0}
+.hint.bad{color:var(--danger)}
+.cta{
+  margin:10px 14px calc(14px + env(safe-area-inset-bottom));padding:15px;border:0;border-radius:12px;
+  background:var(--accent);color:#fff;font-size:16px;font-weight:800;cursor:pointer;width:calc(100% - 28px)}
+.cta[disabled]{background:var(--surface2);color:var(--text3);cursor:default}
+#closedban{background:#fdf4e3;color:#8a6100;font-size:12px;font-weight:700;padding:9px 12px;text-align:center;display:none}
+.retry{
+  margin-top:14px;padding:11px 20px;border:1px solid var(--accent);border-radius:9px;
+  background:var(--accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brandrow">
+    <div class="brand">Dash <span>Super Bazar</span></div>
+    <div id="hdrbtns">
+      <button class="iconbtn" id="myorders" title="My orders" aria-label="My orders">&#128220;
+        <span class="dot" id="myorders-dot" style="display:none"></span></button>
+      <button class="iconbtn" id="shopinfo" title="Shop info" aria-label="Shop info">&#8505;</button>
+    </div>
+    <div class="status" id="status" style="width:100%;text-align:right"></div>
+  </div>
+  <div class="searchwrap">
+    <span class="sicon">&#128269;</span>
+    <input id="q" type="search" inputmode="search" autocomplete="off"
+           autocapitalize="off" spellcheck="false" placeholder="Search for items...">
+    <button id="qclear" aria-label="Clear search">&times;</button>
+  </div>
+</header>
+
+<div id="closedban"></div>
+<div id="banner"></div>
+<div id="cats"></div>
+<div id="home"></div>
+<div id="grid"></div>
+
+<div id="iwrap">
+  <div class="in">
+    <div class="shead" style="padding:14px 0 8px">
+      <div class="t">About this shop</div>
+      <button class="xbtn" id="iclose" aria-label="Close">&times;</button>
+    </div>
+    <div id="ibody"></div>
+  </div>
+</div>
+
+<div id="owrap">
+  <div class="in">
+    <div class="shead" style="padding:14px 0 8px">
+      <div class="t">My orders</div>
+      <button class="xbtn" id="oclose" aria-label="Close">&times;</button>
+    </div>
+    <div id="olist"></div>
+    <div style="margin-top:26px;padding-top:18px;border-top:1px solid var(--line)">
+      <div class="infolbl">Ordered on another phone?</div>
+      <div style="font-size:13px;color:var(--text2);margin:6px 0 10px">
+        Enter the mobile number used and the order number from your receipt.
+      </div>
+      <div class="fg"><input id="find-phone" type="tel" inputmode="numeric" maxlength="10"
+           placeholder="10-digit mobile" autocomplete="tel"></div>
+      <div class="fg"><input id="find-id" placeholder="Order number e.g. ORD-20260820-A2C8"
+           autocapitalize="characters" autocomplete="off"></div>
+      <button class="cta" id="find-go" style="width:100%;margin:4px 0 0">Find my order</button>
+      <div id="find-msg" style="font-size:13px;font-weight:600;margin-top:10px;min-height:18px"></div>
+    </div>
+  </div>
+</div>
+
+<div id="dwrap">
+  <div id="dbg"></div>
+  <div id="dsheet">
+    <div id="dimg"></div>
+    <div class="dbody">
+      <div class="dname" id="dname"></div>
+      <div class="dunit" id="dunit"></div>
+      <div class="dprice" id="dprice"></div>
+      <div class="ddesc" id="ddesc"></div>
+      <div id="dcatwrap"></div>
+    </div>
+    <div class="dact" id="dact"></div>
+  </div>
+</div>
+
+<div id="cartbar">
+  <div class="cb1"><span id="cbcount">0 items</span></div>
+  <div class="cb2"><span id="cbtotal"></span> &nbsp;&rsaquo;</div>
+</div>
+
+<div id="trwrap">
+  <div class="in">
+    <div class="trhead">
+      <div class="t">Order status</div>
+      <button class="xbtn" id="trclose" aria-label="Close">&times;</button>
+    </div>
+    <div id="trbody"></div>
+  </div>
+</div>
+
+<div id="cowrap">
+  <div id="cobg"></div>
+  <div id="co">
+    <div class="shead">
+      <div class="t">Checkout</div>
+      <button class="xbtn" id="coclose" aria-label="Close">&times;</button>
+    </div>
+    <div id="coerr"></div>
+    <div id="cobody">
+      <div class="fg" id="fg-name">
+        <label for="co-name">Your name</label>
+        <input id="co-name" type="text" autocomplete="name" placeholder="Full name">
+        <div class="err">Please enter your name</div>
+      </div>
+      <div class="fg" id="fg-phone">
+        <label for="co-phone">Mobile number</label>
+        <input id="co-phone" type="tel" inputmode="numeric" autocomplete="tel"
+               maxlength="10" placeholder="10-digit mobile">
+        <div class="err">Enter a valid 10-digit mobile number</div>
+      </div>
+      <div class="fg" id="fg-addr">
+        <label for="co-addr">Delivery address</label>
+        <textarea id="co-addr" rows="3" autocomplete="street-address"
+                  placeholder="House / street / landmark"></textarea>
+        <div class="err">Please enter a full delivery address</div>
+      </div>
+      <div class="fg" id="fg-slot">
+        <label for="co-slot">Preferred time</label>
+        <select id="co-slot"></select>
+      </div>
+      <div class="fg">
+        <label for="co-note">Note for the shop (optional)</label>
+        <textarea id="co-note" rows="2" maxlength="300" placeholder="Anything we should know?"></textarea>
+      </div>
+      <input class="hp" id="co-hp" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave empty">
+      <div class="osum" id="co-sum"></div>
+    </div>
+    <button class="cta" id="co-submit">Place Order</button>
+  </div>
+</div>
+
+<div id="okwrap">
+  <div class="in">
+    <div class="tick">&#10003;</div>
+    <div class="oid" id="ok-id"></div>
+    <div class="osub" id="ok-sub"></div>
+    <div class="osum" id="ok-sum" style="margin-top:18px"></div>
+    <div class="tbox">
+      <b>Save this link — it is your receipt.</b><br>
+      <span id="ok-link"></span>
+    </div>
+    <div class="brow">
+      <button id="ok-copy">Copy link</button>
+      <button id="ok-wa" class="solid">Send on WhatsApp</button>
+    </div>
+    <div class="brow" id="ok-payrow" style="display:none">
+      <button id="ok-upi" class="solid">Pay now by UPI</button>
+    </div>
+    <div class="brow"><button id="ok-track" class="solid">Track this order</button><button id="ok-done">Back to shop</button></div>
+  </div>
+</div>
+
+<div id="sheetwrap">
+  <div id="sheetbg"></div>
+  <div id="sheet">
+    <div class="shead">
+      <div class="t">Your basket</div>
+      <button class="xbtn" id="sheetclose" aria-label="Close">&times;</button>
+    </div>
+    <div class="ftoggle" id="ftoggle"></div>
+    <div id="slines"></div>
+    <div class="totals" id="stotals"></div>
+    <div class="hint" id="shint"></div>
+    <button class="cta" id="cta">Place Order</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ==========================================================
+   DSB Storefront — E2 (catalog only)
+   Reads ONLY the public_catalog view. No cost data reachable.
+   Cart / checkout arrive in E3 / E4.
+   ========================================================== */
+
+const SHOP_VERSION = '2026-08-20-s10';
+const SB_URL = 'https://opndijeoqgajdoqjdfum.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wbmRpamVvcWdhamRvcWpkZnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NTQyMTQsImV4cCI6MjA5ODQzMDIxNH0.XPkjJSFvYdN0LBnJKNzBKBhPeDLSbaATYT_JbIbit14';
+const CACHE_KEY = 'dsb_shop_catalog_v1';
+
+let CATALOG = [];      // full list from the view
+let CAT = 'All';       // active category chip
+let Q   = '';          // active search text
+let CART = {};         // { itemId: qty }
+let SETTINGS = null;   // from public_shop_settings
+let FULFIL = 'delivery';
+
+const CART_KEY = 'dsb_shop_cart_v1';
+const FUL_KEY  = 'dsb_shop_fulfil_v1';
+const SET_KEY  = 'dsb_shop_settings_v1';
+
+/* ---------- helpers ---------- */
+function escHTML(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+function money(n){
+  const v = Number(n) || 0;
+  return '\u20B9' + v.toLocaleString('en-IN', { minimumFractionDigits: v % 1 ? 2 : 0,
+                                                maximumFractionDigits: 2 });
+}
+// Deterministic tile colour from the name, so a product always looks the same.
+function tint(name){
+  let h = 0;
+  const s = String(name || '');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  return 'hsl(' + h + ',42%,52%)';
+}
+function initials(name){
+  const w = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!w.length) return '?';
+  return (w[0][0] + (w[1] ? w[1][0] : '')).toUpperCase();
+}
+function setStatus(t){ document.getElementById('status').textContent = t || ''; }
+
+/* ---------- data ---------- */
+async function fetchCatalog(){
+  const r = await fetch(
+    SB_URL + '/rest/v1/public_catalog?select=id,name,category,unit,price,image,description,in_stock&order=name.asc',
+    { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0, 160));
+  const rows = await r.json();
+  if (!Array.isArray(rows)) throw new Error('Unexpected response');
+  return rows;
+}
+
+async function fetchSettings(){
+  const r = await fetch(SB_URL + '/rest/v1/public_shop_settings?select=*&limit=1',
+    { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
+  if (!r.ok) throw new Error('settings HTTP ' + r.status);
+  const rows = await r.json();
+  return (Array.isArray(rows) && rows[0]) ? rows[0] : null;
+}
+
+// Shop can run without settings (table not deployed yet): fee 0, no minimum.
+function settingsOrDefault(){
+  return SETTINGS || {
+    shop_open: true, closed_message: '', pickup_enabled: true, delivery_enabled: true,
+    min_order_pickup: 0, min_order_delivery: 0, delivery_fee: 0,
+    free_delivery_above: 0, slots: '', shop_phone: '', upi_id: '', banner_text: '', banner_active: false, shop_address: '', shop_hours: '', map_url: '', licence_line: ''
+  };
+}
+
+function readCache(){
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    return (o && Array.isArray(o.rows) && o.rows.length) ? o : null;
+  } catch (e) { return null; }
+}
+function writeCache(rows){
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), rows: rows })); }
+  catch (e) { /* quota — cache is optional, never fatal */ }
+}
+
+/* ---------- search ---------- */
+// Tolerant of partial and out-of-order words: "suji ruchi" finds "Ruchi Golden Suji".
+function matches(item, terms){
+  const hay = (item.name + ' ' + (item.category || '')).toLowerCase();
+  for (let i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) === -1) return false;
+  return true;
+}
+function visibleItems(){
+  const terms = Q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return CATALOG.filter(it => {
+    if (CAT !== 'All' && (it.category || 'General') !== CAT) return false;
+    if (terms.length && !matches(it, terms)) return false;
+    return true;
+  });
+}
+
+/* ---------- render ---------- */
+function renderCats(){
+  const seen = Object.create(null);
+  CATALOG.forEach(it => { seen[it.category || 'General'] = 1; });
+  const list = ['All'].concat(Object.keys(seen).sort());
+  if (list.indexOf(CAT) === -1) CAT = 'All';
+  const counts = {};
+  CATALOG.forEach(it => { const k = it.category || 'General'; counts[k] = (counts[k] || 0) + 1; });
+  counts['All'] = CATALOG.length;
+  document.getElementById('cats').innerHTML = list.map(c =>
+    '<button class="chip' + (c === CAT ? ' on' : '') + '" data-cat="' + escHTML(c) + '">'
+    + escHTML(c) + ' <span style="opacity:.6">' + (counts[c] || 0) + '</span></button>').join('');
+}
+
+function cardHTML(it){
+  const oos = !it.in_stock;
+  const ph = '<div class="ph" style="width:100%;height:100%;display:flex;align-items:center;'
+      + 'justify-content:center;background:' + tint(it.name) + '">'
+      + escHTML(initials(it.name)) + '</div>';
+  // A dead photo URL must degrade to the tile, never a broken-image icon.
+  const img = it.image
+    ? '<img src="' + escHTML(it.image) + '" alt="" loading="lazy" decoding="async"'
+      + ' onerror="this.parentNode.innerHTML=this.getAttribute(\'data-ph\')"'
+      + ' data-ph="' + escHTML(ph) + '">'
+    : ph;
+  return '<div class="card' + (oos ? ' oos' : '') + '" data-open="' + escHTML(it.id) + '">'
+    + '<div class="thumb">' + img
+    + (oos ? '<div class="oosbadge">Out of stock</div>' : '') + '</div>'
+    + '<div class="body">'
+    + '<div class="nm">' + escHTML(it.name) + '</div>'
+    + '<div class="un">' + escHTML(it.unit || '') + '</div>'
+    + '<div class="prow"><div class="pr">' + money(it.price) + '</div>'
+    + '<span data-card="' + escHTML(it.id) + '">' + ctrlHTML(it, oos) + '</span>'
+    + '</div></div></div>';
+}
+
+function ctrlHTML(it, oos){
+  if (oos) return '<button class="add" disabled>\u2014</button>';
+  const q = CART[it.id] || 0;
+  if (!q) return '<button class="add" data-add="' + escHTML(it.id) + '">ADD</button>';
+  return '<div class="step">'
+    + '<button data-dec="' + escHTML(it.id) + '" aria-label="Decrease">\u2212</button>'
+    + '<span class="n">' + q + '</span>'
+    + '<button data-inc="' + escHTML(it.id) + '" aria-label="Increase">+</button>'
+    + '</div>';
+}
+
+/* ---------- cart ---------- */
+function loadCart(){
+  try { CART = JSON.parse(localStorage.getItem(CART_KEY) || '{}') || {}; }
+  catch (e) { CART = {}; }
+  try { FULFIL = localStorage.getItem(FUL_KEY) || 'delivery'; } catch (e) {}
+  try { const c = localStorage.getItem(SET_KEY); if (c) SETTINGS = JSON.parse(c); } catch (e) {}
+}
+function saveCart(){
+  try { localStorage.setItem(CART_KEY, JSON.stringify(CART)); } catch (e) {}
+  try { localStorage.setItem(FUL_KEY, FULFIL); } catch (e) {}
+}
+function itemById(id){
+  for (let i = 0; i < CATALOG.length; i++) if (CATALOG[i].id === id) return CATALOG[i];
+  return null;
+}
+function setQty(id, q){
+  const it = itemById(id);
+  if (!it || !it.in_stock) return;
+  q = Math.max(0, Math.min(100, q));
+  if (q) CART[id] = q; else delete CART[id];
+  saveCart();
+  updateCardCtrl(id);
+  renderDetailAction();
+  renderCartBar();
+  if (document.getElementById('sheetwrap').style.display === 'block') renderSheet();
+}
+// Repaint one card, not the whole grid — keeps scroll position on tap.
+function updateCardCtrl(id){
+  const it = itemById(id);
+  if (!it) return;
+  // The same item can appear in "Popular" and in its category rail at once.
+  const nodes = document.querySelectorAll('[data-card="' + id.replace(/"/g, '') + '"]');
+  const html = ctrlHTML(it, !it.in_stock);
+  for (let i = 0; i < nodes.length; i++) nodes[i].innerHTML = html;
+}
+
+// Lines whose item vanished from the catalog or went out of stock.
+function cartLines(){
+  const out = [];
+  Object.keys(CART).forEach(id => {
+    const it = itemById(id);
+    const qty = CART[id];
+    if (!it)               out.push({ id: id, qty: qty, gone: true,  name: 'Item no longer available', price: 0, unit: '' });
+    else if (!it.in_stock) out.push({ id: id, qty: qty, gone: true,  name: it.name, price: it.price, unit: it.unit, oos: true });
+    else                   out.push({ id: id, qty: qty, gone: false, name: it.name, price: it.price, unit: it.unit });
+  });
+  return out;
+}
+function cartTotals(){
+  const s = settingsOrDefault();
+  let subtotal = 0, count = 0;
+  cartLines().forEach(l => { if (!l.gone){ subtotal += l.price * l.qty; count += 1; } });
+  subtotal = Math.round(subtotal * 100) / 100;
+  const min = FULFIL === 'pickup' ? Number(s.min_order_pickup) || 0
+                                  : Number(s.min_order_delivery) || 0;
+  let fee = 0;
+  if (FULFIL === 'delivery'){
+    const free = Number(s.free_delivery_above) || 0;
+    fee = (free > 0 && subtotal >= free) ? 0 : (Number(s.delivery_fee) || 0);
+  }
+  return { subtotal: subtotal, fee: fee, min: min, count: count,
+           total: Math.round((subtotal + fee) * 100) / 100 };
+}
+
+function renderCartBar(){
+  const t = cartTotals();
+  const bar = document.getElementById('cartbar');
+  if (!t.count){ bar.style.display = 'none'; document.body.style.paddingBottom = ''; return; }
+  document.getElementById('cbcount').textContent = t.count + (t.count === 1 ? ' item' : ' items');
+  document.getElementById('cbtotal').textContent = money(t.subtotal);
+  bar.style.display = 'flex';
+  document.body.style.paddingBottom = '72px';
+}
+
+function renderSheet(){
+  const s = settingsOrDefault();
+  const t = cartTotals();
+  const lines = cartLines();
+
+  // fulfilment toggle — only when both are on offer
+  const ft = document.getElementById('ftoggle');
+  if (s.pickup_enabled && s.delivery_enabled){
+    ft.style.display = 'flex';
+    ft.innerHTML =
+      '<button data-ful="delivery" class="' + (FULFIL === 'delivery' ? 'on' : '') + '">Delivery</button>'
+    + '<button data-ful="pickup" class="'   + (FULFIL === 'pickup'   ? 'on' : '') + '">Pickup</button>';
+  } else {
+    ft.style.display = 'none';
+    FULFIL = s.pickup_enabled && !s.delivery_enabled ? 'pickup' : 'delivery';
+  }
+
+  document.getElementById('slines').innerHTML = lines.length ? lines.map(l =>
+    '<div class="line' + (l.gone ? ' bad' : '') + '">'
+    + '<div class="ln"><div class="lnm">' + escHTML(l.name) + '</div>'
+    + '<div class="lsub">' + money(l.price) + (l.unit ? ' / ' + escHTML(l.unit) : '') + '</div>'
+    + (l.gone ? '<div class="warn">' + (l.oos ? 'Out of stock \u2014 not included'
+                                              : 'Removed from shop \u2014 not included') + '</div>' : '')
+    + '</div>'
+    + '<div class="step">'
+      + '<button data-dec="' + escHTML(l.id) + '">\u2212</button>'
+      + '<span class="n">' + l.qty + '</span>'
+      + '<button data-inc="' + escHTML(l.id) + '"' + (l.gone ? ' disabled' : '') + '>+</button>'
+    + '</div>'
+    + '<div class="lt">' + (l.gone ? '\u2014' : money(l.price * l.qty)) + '</div>'
+    + '</div>').join('')
+    : '<div class="msg"><div class="big">\uD83E\uDDFA</div><div class="t">Your basket is empty</div>'
+      + '<div>The good stuff is one tap away.</div></div>';
+
+  document.getElementById('stotals').innerHTML = t.count
+    ? '<div class="trow"><span>Subtotal</span><span>' + money(t.subtotal) + '</span></div>'
+      + (FULFIL === 'delivery'
+          ? '<div class="trow"><span>Delivery</span><span>'
+            + (t.fee ? money(t.fee) : 'FREE') + '</span></div>' : '')
+      + '<div class="trow grand"><span>Total</span><span>' + money(t.total) + '</span></div>'
+    : '';
+
+  const hint = document.getElementById('shint');
+  const cta  = document.getElementById('cta');
+  let msg = '', block = false;
+
+  if (!s.shop_open){ msg = s.closed_message || 'Shop is closed right now.'; block = true; }
+  else if (!t.count){ msg = ''; block = true; }
+  else if (t.subtotal < t.min){
+    msg = 'Add ' + money(t.min - t.subtotal) + ' more to place a '
+        + (FULFIL === 'pickup' ? 'pickup' : 'delivery') + ' order';
+    block = true;
+  } else if (FULFIL === 'delivery' && t.fee > 0 && Number(s.free_delivery_above) > 0){
+    msg = 'Add ' + money(Number(s.free_delivery_above) - t.subtotal) + ' more for free delivery';
+  }
+  hint.textContent = msg;
+  hint.className = 'hint' + (block && msg ? ' bad' : '');
+  cta.disabled = block;
+  cta.textContent = block && !s.shop_open ? 'Shop closed' : 'Place Order';
+}
+
+/* ===== E4 — Checkout + order placement ====================================
+   The client sends only item ids and quantities. Prices, delivery fee,
+   minimums and the order total are all computed by place_order server-side.
+   ========================================================================= */
+const WHO_KEY  = 'dsb_shop_customer_v1';   // name/phone/address remembered on device
+const LAST_KEY = 'dsb_shop_lastorder_v1';  // tracking credentials for the last order
+
+function loadWho(){
+  try { return JSON.parse(localStorage.getItem(WHO_KEY) || '{}') || {}; }
+  catch (e) { return {}; }
+}
+function saveWho(w){
+  try { localStorage.setItem(WHO_KEY, JSON.stringify(w)); } catch (e) {}
+}
+function digits10(v){ return String(v || '').replace(/\D/g, '').slice(0, 10); }
+
+function coSetErr(msg){
+  const el = document.getElementById('coerr');
+  el.textContent = msg || '';
+  el.style.display = msg ? 'block' : 'none';
+  if (msg) document.getElementById('cobody').scrollTop = 0;
+}
+function fgBad(id, bad){
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('bad', !!bad);
+}
+
+function openCheckout(){
+  const s = settingsOrDefault();
+  const t = cartTotals();
+  if (!t.count || t.subtotal < t.min || !s.shop_open) return;
+
+  const w = loadWho();
+  document.getElementById('co-name').value  = w.name  || '';
+  document.getElementById('co-phone').value = w.phone || '';
+  document.getElementById('co-addr').value  = w.address || '';
+  document.getElementById('co-note').value  = '';
+  document.getElementById('co-hp').value    = '';
+  coSetErr('');
+  ['fg-name','fg-phone','fg-addr'].forEach(id => fgBad(id, false));
+
+  // Address only matters for delivery.
+  document.getElementById('fg-addr').style.display = FULFIL === 'delivery' ? 'block' : 'none';
+
+  // Slots come from admin settings; hide the picker when none are configured.
+  const slots = String(s.slots || '').split(',').map(x => x.trim()).filter(Boolean);
+  const sel = document.getElementById('co-slot');
+  document.getElementById('fg-slot').style.display = slots.length ? 'block' : 'none';
+  sel.innerHTML = '<option value="">No preference</option>'
+    + slots.map(x => '<option value="' + escHTML(x) + '">' + escHTML(x) + '</option>').join('');
+
+  document.getElementById('co-sum').innerHTML = summaryHTML(t, FULFIL);
+  document.getElementById('co-submit').disabled = false;
+  document.getElementById('co-submit').textContent = 'Place Order';
+  document.getElementById('cowrap').style.display = 'block';
+}
+function closeCheckout(){ document.getElementById('cowrap').style.display = 'none'; }
+
+function summaryHTML(t, ful){
+  return '<div class="trow"><span>' + t.count + ' item' + (t.count === 1 ? '' : 's')
+       + '</span><span>' + money(t.subtotal) + '</span></div>'
+       + (ful === 'delivery'
+           ? '<div class="trow"><span>Delivery</span><span>'
+             + (t.fee ? money(t.fee) : 'FREE') + '</span></div>'
+           : '<div class="trow"><span>Pickup</span><span>Free</span></div>')
+       + '<div class="trow grand"><span>Total</span><span>' + money(t.total) + '</span></div>';
+}
+
+// Server error codes -> what a customer should actually read.
+function humanError(raw){
+  const m = String(raw || '');
+  if (m.indexOf('BELOW_MIN') >= 0){
+    const n = m.split(':')[1];
+    return 'Your basket is below the minimum order of ' + money(parseFloat(n) || 0) + '.';
+  }
+  if (m.indexOf('UNAVAILABLE') >= 0){
+    const id = m.split(':')[1] || '';
+    const it = itemById(id.trim());
+    // Goes into textContent, which escapes on its own — escHTML here would double-encode.
+    return (it ? it.name : 'An item') + ' just went out of stock. '
+         + 'Please remove it from your basket and try again.';
+  }
+  if (m.indexOf('RATE_LIMIT')   >= 0) return 'Too many orders from this number in the last hour. Please try again later.';
+  if (m.indexOf('SHOP_CLOSED')  >= 0) return 'The shop just closed. Please order later.';
+  if (m.indexOf('BLOCKED')      >= 0) return 'We could not accept this order. Please call the shop.';
+  if (m.indexOf('BAD_PHONE')    >= 0) return 'That mobile number does not look right.';
+  if (m.indexOf('BAD_ADDRESS')  >= 0) return 'Please enter a fuller delivery address.';
+  if (m.indexOf('BAD_NAME')     >= 0) return 'Please enter your name.';
+  if (m.indexOf('BAD_QTY')      >= 0) return 'One of the quantities is not valid.';
+  if (m.indexOf('BAD_CART')     >= 0) return 'Your basket is empty or too large.';
+  if (m.indexOf('PICKUP_OFF')   >= 0) return 'Pickup is not available right now.';
+  if (m.indexOf('DELIVERY_OFF') >= 0) return 'Delivery is not available right now.';
+  if (m.indexOf('REJECTED')     >= 0) return 'We could not accept this order.';
+  return 'Could not place the order. Please check your connection and try again.';
+}
+
+async function submitOrder(){
+  const btn = document.getElementById('co-submit');
+  if (btn.disabled) return;
+
+  const name  = document.getElementById('co-name').value.trim();
+  const phone = digits10(document.getElementById('co-phone').value);
+  const addr  = document.getElementById('co-addr').value.trim();
+  const note  = document.getElementById('co-note').value.trim();
+  const slot  = document.getElementById('co-slot').value || '';
+  const hp    = document.getElementById('co-hp').value;
+
+  const badName  = name.length < 2;
+  const badPhone = !/^[6-9][0-9]{9}$/.test(phone);
+  const badAddr  = FULFIL === 'delivery' && addr.length < 8;
+  fgBad('fg-name', badName); fgBad('fg-phone', badPhone); fgBad('fg-addr', badAddr);
+  if (badName || badPhone || badAddr){ coSetErr('Please fix the highlighted fields.'); return; }
+
+  const lines = cartLines().filter(l => !l.gone).map(l => ({ id: l.id, qty: l.qty }));
+  if (!lines.length){ coSetErr('Your basket is empty.'); return; }
+
+  coSetErr('');
+  btn.disabled = true;
+  btn.textContent = 'Placing order\u2026';
+
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/rpc/place_order', {
+      method: 'POST',
+      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY,
+                 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        p_name: name, p_phone: phone,
+        p_address: FULFIL === 'delivery' ? addr : '',
+        p_note: note, p_fulfil: FULFIL, p_slot: slot,
+        p_items: lines, p_hp: hp })
+    });
+    const txt = await r.text();
+    if (!r.ok) throw new Error(txt);
+
+    let res = null;
+    try { res = JSON.parse(txt); } catch (e) {}
+    if (!res || !res.order_id) throw new Error('Unexpected response');
+
+    saveWho({ name: name, phone: phone, address: addr });
+    const rec = { id: res.order_id, token: res.access_token,
+                  total: res.total, at: Date.now(),
+                  n: lines.length, status: 'placed',
+                  items: cartLines().filter(l => !l.gone)
+                          .map(l => ({ item_id: l.id, name: l.name, qty: l.qty })) };
+    try { localStorage.setItem(LAST_KEY, JSON.stringify(rec)); } catch (e) {}
+    addToHistory(rec);
+
+    CART = {}; saveCart();
+    renderCartBar(); renderGrid();
+    closeCheckout(); closeSheet();
+    showConfirmation(res, name);
+  } catch (e){
+    coSetErr(humanError(e && e.message));
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+  }
+}
+
+function trackingURL(id, token){
+  return location.origin + location.pathname
+       + '#order=' + encodeURIComponent(id) + '&t=' + encodeURIComponent(token);
+}
+
+function showConfirmation(res, name){
+  const s = settingsOrDefault();
+  const url = trackingURL(res.order_id, res.access_token);
+  document.getElementById('ok-id').textContent = res.order_id;
+  document.getElementById('ok-sub').textContent =
+    'Thanks ' + name + ' \u2014 the shop has your order.'
+    + (s.shop_phone ? ' Questions? Call ' + s.shop_phone + '.' : '');
+  document.getElementById('ok-sum').innerHTML =
+    '<div class="trow"><span>Items</span><span>' + money(res.subtotal) + '</span></div>'
+    + (Number(res.delivery_fee) > 0
+        ? '<div class="trow"><span>Delivery</span><span>' + money(res.delivery_fee) + '</span></div>'
+        : '')
+    + '<div class="trow grand"><span>Total</span><span>' + money(res.total) + '</span></div>';
+  document.getElementById('ok-link').textContent = url;
+  document.getElementById('ok-wa').onclick = () => {
+    window.open('https://wa.me/?text=' + encodeURIComponent(
+      'My Dash Super Bazar order ' + res.order_id + ': ' + url), '_blank');
+  };
+  document.getElementById('ok-copy').onclick = () => {
+    const b = document.getElementById('ok-copy');
+    const done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy link'; }, 1400); };
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(url).then(done).catch(() => {});
+    else done();
+  };
+  // UPI is optional: only offered when a UPI id is configured in admin settings.
+  const upi = String(s.upi_id || '').trim();
+  const payrow = document.getElementById('ok-payrow');
+  if (upi && Number(res.total) > 0){
+    payrow.style.display = 'flex';
+    document.getElementById('ok-upi').onclick = () => {
+      location.href = 'upi://pay?pa=' + encodeURIComponent(upi)
+        + '&pn=' + encodeURIComponent('Dash Super Bazar')
+        + '&am=' + encodeURIComponent(Number(res.total).toFixed(2))
+        + '&cu=INR&tn=' + encodeURIComponent(res.order_id);
+    };
+  } else payrow.style.display = 'none';
+
+  document.getElementById('okwrap').style.display = 'block';
+  window.scrollTo(0, 0);
+  // The tracking link is the receipt; make it one tap from here too.
+  document.getElementById('ok-track').onclick = () => {
+    document.getElementById('okwrap').style.display = 'none';
+    openTracking(res.order_id, res.access_token);
+  };
+}
+
+function openSheet(){
+  document.getElementById('sheetwrap').style.display = 'block';
+  renderSheet();
+}
+function closeSheet(){ document.getElementById('sheetwrap').style.display = 'none'; }
+
+/* ===== Order recovery ======================================================
+   Phone + order id together. Either alone reveals nothing, and the server
+   returns the same empty result for a wrong phone or a wrong id, so this
+   cannot be used to test whether a number has ordered here.
+   ========================================================================= */
+async function findMyOrder(){
+  const btn  = document.getElementById('find-go');
+  const msg  = document.getElementById('find-msg');
+  const ph   = digits10(document.getElementById('find-phone').value);
+  const id   = document.getElementById('find-id').value.trim().toUpperCase();
+  const show = (t, ok) => { msg.textContent = t; msg.style.color = ok ? 'var(--accent)' : 'var(--danger)'; };
+
+  if (!/^[6-9][0-9]{9}$/.test(ph)){ show('Enter a valid 10-digit mobile number', false); return; }
+  if (id.length < 6){ show('Enter the full order number', false); return; }
+
+  btn.disabled = true; btn.textContent = 'Searching\u2026'; show('', true);
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/rpc/find_order', {
+      method: 'POST',
+      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY,
+                 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_phone: ph, p_id: id })
+    });
+    const txt = await r.text();
+    if (!r.ok) throw new Error(txt);
+    let res = null;
+    try { res = JSON.parse(txt); } catch (e) {}
+    if (!res || !res.access_token){
+      show('No order found. Check the number and the order code.', false);
+      return;
+    }
+    // Remember it on this device so it behaves like any other order from now on.
+    addToHistory({ id: res.id, token: res.access_token, at: Date.now(),
+                   status: 'placed', total: 0, n: 0, items: [] });
+    closeHistory();
+    openTracking(res.id, res.access_token);
+  } catch (e){
+    show('Could not search right now. Please try again.', false);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Find my order';
+  }
+}
+
+/* ===== S8 — shop info page ================================================
+   Everything here comes from admin settings. Nothing is hardcoded, so the
+   shopkeeper can correct an address without a deploy.
+   ========================================================================= */
+function renderShopInfo(){
+  const st = settingsOrDefault();
+  const body = document.getElementById('ibody');
+  const rows = [];
+
+  rows.push('<div class="inforow"><div class="infolbl">Status</div><div class="infoval">'
+    + '<span class="openpill ' + (st.shop_open ? 'on' : 'off') + '">'
+    + (st.shop_open ? 'Open for orders' : 'Closed right now') + '</span></div></div>');
+
+  if (st.shop_hours)
+    rows.push('<div class="inforow"><div class="infolbl">Hours</div>'
+      + '<div class="infoval">' + escHTML(st.shop_hours) + '</div></div>');
+
+  if (st.shop_address)
+    rows.push('<div class="inforow"><div class="infolbl">Address</div>'
+      + '<div class="infoval">' + escHTML(st.shop_address) + '</div></div>');
+
+  const modes = [];
+  if (st.pickup_enabled)   modes.push('Pickup from shop');
+  if (st.delivery_enabled) modes.push('Home delivery');
+  if (modes.length)
+    rows.push('<div class="inforow"><div class="infolbl">How to get your order</div>'
+      + '<div class="infoval">' + escHTML(modes.join(' \u00B7 ')) + '</div></div>');
+
+  if (st.delivery_enabled){
+    const fee  = Number(st.delivery_fee) || 0;
+    const free = Number(st.free_delivery_above) || 0;
+    const min  = Number(st.min_order_delivery) || 0;
+    let t = fee ? money(fee) + ' delivery charge' : 'Free delivery';
+    if (fee && free) t += ', free above ' + money(free);
+    if (min) t += '\nMinimum order ' + money(min);
+    rows.push('<div class="inforow"><div class="infolbl">Delivery</div>'
+      + '<div class="infoval">' + escHTML(t) + '</div></div>');
+  }
+
+  if (st.licence_line)
+    rows.push('<div class="inforow"><div class="infolbl">Licence</div>'
+      + '<div class="infoval">' + escHTML(st.licence_line) + '</div></div>');
+
+  // Only https links are ever rendered, so a bad settings value can't become javascript:
+  const safeMap = /^https:\/\/\S+$/i.test(String(st.map_url || '')) ? st.map_url : '';
+  let links = '';
+  if (st.shop_phone)
+    links += '<a class="infolink" href="tel:' + encodeURIComponent(st.shop_phone) + '">Call the shop</a>';
+  if (safeMap)
+    links += '<a class="infolink ghost" href="' + escHTML(safeMap)
+          + '" target="_blank" rel="noopener">Open in Maps</a>';
+
+  body.innerHTML = rows.join('') + links;
+}
+function openShopInfo(){
+  renderShopInfo();
+  document.getElementById('iwrap').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+function closeShopInfo(){ document.getElementById('iwrap').style.display = 'none'; }
+
+/* ===== S7 — order history on this device ==================================
+   No account, no login. Every order placed on this phone is remembered
+   locally with its access token, and statuses are refreshed from get_order.
+   The server stays the source of truth for status; localStorage only stores
+   the credentials needed to ask.
+   ========================================================================= */
+const HIST_KEY = 'dsb_shop_orders_v1';
+const HIST_MAX = 25;
+
+function loadHistory(){
+  try {
+    const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+    return Array.isArray(a) ? a : [];
+  } catch (e) { return []; }
+}
+function saveHistory(a){
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(a.slice(0, HIST_MAX))); } catch (e) {}
+}
+function addToHistory(rec){
+  const a = loadHistory().filter(o => o.id !== rec.id);
+  a.unshift(rec);
+  saveHistory(a);
+  renderHistoryDot();
+}
+
+// An order still moving through the shop is worth a badge; a finished one isn't.
+function isLiveStatus(st){
+  return st && st !== 'delivered' && st !== 'cancelled' && st !== 'rejected';
+}
+function renderHistoryDot(){
+  const a = loadHistory();
+  const live = a.filter(o => isLiveStatus(o.status)).length;
+  const dot = document.getElementById('myorders-dot');
+  if (!dot) return;
+  dot.textContent = live > 9 ? '9+' : String(live);
+  dot.style.display = live ? 'block' : 'none';
+}
+
+function statusLabel(st){
+  const M = { placed:'Placed', confirmed:'Confirmed', packing:'Being packed',
+    ready:'Ready', out_for_delivery:'Out for delivery', delivered:'Delivered',
+    cancelled:'Cancelled', rejected:'Not accepted' };
+  return M[st] || 'Placed';
+}
+function whenLabel(ms){
+  const n = Number(ms) || 0;
+  if (!n) return '';
+  const mins = Math.round((Date.now() - n) / 60000);
+  if (mins < 1)    return 'just now';
+  if (mins < 60)   return mins + ' min ago';
+  const h = Math.round(mins / 60);
+  if (h < 24)      return h + (h === 1 ? ' hour ago' : ' hours ago');
+  return new Date(n).toLocaleDateString('en-IN',
+    { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' });
+}
+
+function renderHistory(){
+  const a = loadHistory();
+  const el = document.getElementById('olist');
+  if (!a.length){
+    el.innerHTML = '<div class="msg"><div class="big">\uD83E\uDDFE</div>'
+      + '<div class="t">No orders yet</div>'
+      + '<div>Orders you place on this phone appear here.</div></div>';
+    return;
+  }
+  el.innerHTML = a.map(o => {
+    const dead = o.status === 'cancelled' || o.status === 'rejected';
+    return '<div class="ordcard">'
+      + '<div class="ordtop"><div class="ordid">' + escHTML(o.id) + '</div>'
+      + '<div class="ordwhen">' + escHTML(whenLabel(o.at)) + '</div></div>'
+      + '<div class="ordstat' + (dead ? ' dead' : '') + '">'
+      + escHTML(statusLabel(o.status)) + '</div>'
+      + '<div class="ordsum">' + (Number(o.n) || 0) + ' item'
+      + ((Number(o.n) || 0) === 1 ? '' : 's') + ' \u00B7 ' + money(o.total) + '</div>'
+      + '<div class="ordbtns">'
+      + '<button data-track="' + escHTML(o.id) + '">Track</button>'
+      + '<button class="solid" data-again="' + escHTML(o.id) + '">Order again</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+// Refresh statuses in the background; a failure just leaves the last known value.
+async function refreshHistory(){
+  const a = loadHistory();
+  const live = a.filter(o => isLiveStatus(o.status)).slice(0, 6);
+  if (!live.length) return;
+  for (let i = 0; i < live.length; i++){
+    try {
+      const o = await fetchOrder(live[i].id, live[i].token);
+      if (o){
+        live[i].status = o.status;
+        live[i].total  = o.total;
+        live[i].items  = Array.isArray(o.items) ? o.items : live[i].items;
+        live[i].n      = (o.items || []).length || live[i].n;
+      }
+    } catch (e) { /* offline: keep what we have */ }
+  }
+  const byId = {};
+  live.forEach(o => { byId[o.id] = o; });
+  saveHistory(a.map(o => byId[o.id] || o));
+  renderHistoryDot();
+  if (document.getElementById('owrap').style.display === 'block') renderHistory();
+}
+
+function openHistory(){
+  document.getElementById('owrap').style.display = 'block';
+  window.scrollTo(0, 0);
+  renderHistory();
+  refreshHistory();
+}
+function closeHistory(){ document.getElementById('owrap').style.display = 'none'; }
+
+// Rebuild the cart from a past order, skipping anything no longer sellable.
+function orderAgain(id){
+  const rec = loadHistory().find(o => o.id === id);
+  if (!rec || !Array.isArray(rec.items) || !rec.items.length){
+    alert('This order has no saved items to reorder.');
+    return;
+  }
+  let added = 0;
+  const skipped = [];
+  rec.items.forEach(l => {
+    const it = l.item_id ? itemById(l.item_id)
+      : CATALOG.find(x => x.name === l.name);
+    if (it && it.in_stock){
+      CART[it.id] = Math.max(0, Math.min(100, (CART[it.id] || 0) + (Number(l.qty) || 0)));
+      added++;
+    } else skipped.push(l.name);
+  });
+  saveCart();
+  renderGrid(); renderCartBar();
+  closeHistory();
+  if (!added){
+    alert('None of those items are available right now.');
+    return;
+  }
+  openSheet();
+  if (skipped.length)
+    alert('Added ' + added + ' item(s).\n\nNot available right now:\n' + skipped.join('\n'));
+}
+
+// "Buy it again" shelf: items this phone has ordered before and can order now.
+function reorderShelfHTML(){
+  const seen = Object.create(null);
+  loadHistory().forEach(o => (o.items || []).forEach(l => {
+    const it = l.item_id ? itemById(l.item_id) : CATALOG.find(x => x.name === l.name);
+    if (it && it.in_stock) seen[it.id] = it;
+  }));
+  const rows = Object.keys(seen).map(k => seen[k]).slice(0, 12);
+  if (rows.length < 2) return '';
+  return '<div class="shelf"><div class="shelfhead"><h2>Buy it again</h2></div>'
+    + '<div class="rail">' + rows.map(cardHTML).join('') + '</div></div>';
+}
+
+/* ===== S6a — home shelves, category tiles, item detail =====================
+   The flat 194-item grid is now only used for a chosen category or a search.
+   The default view is a browsable home screen: banner, category tiles, and a
+   horizontal rail per category, the way a shopper actually scans a shop.
+   ========================================================================= */
+
+// One place that decides what the body shows, so the two views can never both render.
+function isBrowsing(){ return CAT === 'All' && !Q.trim(); }
+
+function catList(){
+  const seen = Object.create(null);
+  CATALOG.forEach(it => { const k = it.category || 'General'; seen[k] = (seen[k] || 0) + 1; });
+  return Object.keys(seen).sort().map(k => ({ name: k, n: seen[k] }));
+}
+
+// Deterministic colour + first in-stock image, so a category tile looks stable.
+function catImage(name){
+  for (let i = 0; i < CATALOG.length; i++){
+    const it = CATALOG[i];
+    if ((it.category || 'General') === name && it.image) return it.image;
+  }
+  return '';
+}
+
+function tileHTML(c){
+  const img = catImage(c.name);
+  const inner = img
+    ? '<img src="' + escHTML(img) + '" alt="" loading="lazy">'
+    : escHTML(initials(c.name));
+  return '<button class="tile" data-cat="' + escHTML(c.name) + '">'
+    + '<span class="tiledot" style="background:' + tint(c.name) + '">' + inner + '</span>'
+    + '<span>' + escHTML(c.name) + '</span></button>';
+}
+
+function shelfHTML(c){
+  const rows = CATALOG.filter(it => (it.category || 'General') === c.name).slice(0, 12);
+  if (!rows.length) return '';
+  return '<div class="shelf"><div class="shelfhead">'
+    + '<h2>' + escHTML(c.name) + '</h2>'
+    + '<button data-cat="' + escHTML(c.name) + '">See all ' + c.n + ' \u203A</button>'
+    + '</div><div class="rail">' + rows.map(cardHTML).join('') + '</div></div>';
+}
+
+function renderHome(){
+  const home = document.getElementById('home');
+  const cats = catList();
+  if (!CATALOG.length){ home.innerHTML = ''; return; }
+
+  // In-stock first so the shelves never open on a row of greyed-out items.
+  const featured = CATALOG.filter(it => it.in_stock).slice(0, 12);
+
+  home.innerHTML =
+    (cats.length > 1
+      ? '<div class="secttl">Shop by category</div><div class="tiles">'
+        + cats.map(tileHTML).join('') + '</div>'
+      : '')
+    + reorderShelfHTML()
+    + (featured.length
+      ? '<div class="shelf"><div class="shelfhead"><h2>Popular right now</h2></div>'
+        + '<div class="rail">' + featured.map(cardHTML).join('') + '</div></div>'
+      : '')
+    + cats.map(shelfHTML).join('');
+}
+
+function renderBanner(){
+  const st = settingsOrDefault();
+  const el = document.getElementById('banner');
+  if (st.banner_active && String(st.banner_text || '').trim()){
+    el.textContent = st.banner_text;      // textContent: never trust settings as markup
+    el.style.display = 'block';
+  } else el.style.display = 'none';
+}
+
+/* ---------- item detail ---------- */
+let DETAIL_ID = null;
+
+function openDetail(id){
+  const it = itemById(id);
+  if (!it) return;
+  DETAIL_ID = id;
+  document.getElementById('dimg').innerHTML = it.image
+    ? '<img src="' + escHTML(it.image) + '" alt="">'
+    : '<div class="ph" style="width:100%;height:100%;display:flex;align-items:center;'
+      + 'justify-content:center;background:' + tint(it.name) + ';color:#fff;font-weight:800">'
+      + escHTML(initials(it.name)) + '</div>';
+  document.getElementById('dname').textContent  = it.name;
+  document.getElementById('dunit').textContent  = it.unit ? 'Sold per ' + it.unit : '';
+  document.getElementById('dprice').textContent = money(it.price)
+    + (it.in_stock ? '' : '  \u00B7  Out of stock');
+  // textContent: a description is plain text from admin, never markup.
+  document.getElementById('ddesc').textContent = it.description || '';
+  document.getElementById('dcatwrap').innerHTML = it.category
+    ? '<span class="dcat">' + escHTML(it.category) + '</span>' : '';
+  renderDetailAction();
+  document.getElementById('dwrap').style.display = 'block';
+}
+function closeDetail(){ document.getElementById('dwrap').style.display = 'none'; DETAIL_ID = null; }
+
+function renderDetailAction(){
+  if (!DETAIL_ID) return;
+  const it = itemById(DETAIL_ID);
+  const act = document.getElementById('dact');
+  if (!it || !it.in_stock){
+    act.innerHTML = '<button class="add" disabled>Out of stock</button>';
+    return;
+  }
+  const q = CART[it.id] || 0;
+  act.innerHTML = q
+    ? '<div class="step"><button data-dec="' + escHTML(it.id) + '">\u2212</button>'
+      + '<span class="n">' + q + '</span>'
+      + '<button data-inc="' + escHTML(it.id) + '">+</button></div>'
+    : '<button class="add" data-add="' + escHTML(it.id) + '">Add to basket</button>';
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  const home = document.getElementById('home');
+  // Home and grid are mutually exclusive: browsing shows shelves, a chosen
+  // category or an active search shows the flat filtered grid.
+  if (isBrowsing()){
+    grid.innerHTML = '';
+    grid.style.display = 'none';
+    home.style.display = '';
+    renderHome();
+    return;
+  }
+  home.innerHTML = '';
+  home.style.display = 'none';
+  grid.style.display = '';
+  const list = visibleItems();
+  if (!list.length){
+    grid.innerHTML = '<div class="msg"><div class="big">\uD83D\uDD0D</div>'
+      + '<div class="t">Nothing found</div>'
+      + '<div>' + (Q ? 'No item matches \u201C' + escHTML(Q) + '\u201D.'
+                     : 'This section is empty right now.') + '</div></div>';
+    return;
+  }
+  grid.innerHTML = list.map(cardHTML).join('');
+}
+
+function renderSkeleton(){
+  let h = '';
+  for (let i = 0; i < 6; i++)
+    h += '<div class="sk"><div class="b b1"></div><div class="b b2"></div><div class="b b3"></div></div>';
+  document.getElementById('grid').innerHTML = h;
+}
+
+function renderError(msg){
+  document.getElementById('grid').innerHTML =
+    '<div class="msg"><div class="big">\uD83D\uDCF6</div>'
+    + '<div class="t">Could not load the shop</div>'
+    + '<div>' + escHTML(msg) + '</div>'
+    + '<button class="retry" id="retry">Try again</button></div>';
+  const b = document.getElementById('retry');
+  if (b) b.onclick = () => load(true);
+}
+
+/* ---------- load ---------- */
+async function load(force){
+  const cached = readCache();
+  if (cached && !force){
+    CATALOG = cached.rows;
+    renderCats(); renderGrid(); renderCartBar();
+    setStatus('Updating\u2026');
+  } else {
+    renderSkeleton();
+    setStatus('Loading\u2026');
+  }
+  try {
+    const rows = await fetchCatalog();
+    CATALOG = rows;
+    writeCache(rows);
+    renderCats(); renderGrid();
+    setStatus(rows.length + ' items');
+    // Settings are secondary: a failure here must not blank the catalog.
+    try {
+      const st = await fetchSettings();
+      if (st){
+        SETTINGS = st;
+        try { localStorage.setItem(SET_KEY, JSON.stringify(st)); } catch (e2) {}
+      }
+    } catch (e2) {}
+    applySettingsUI();
+    renderBanner();
+    renderCartBar();
+    refreshHistory();
+  } catch (e){
+    if (CATALOG.length) setStatus('Offline \u2014 showing saved list');
+    else renderError(e.message || 'Network error'), setStatus('');
+  }
+}
+
+function applySettingsUI(){
+  const s = settingsOrDefault();
+  const ban = document.getElementById('closedban');
+  if (!s.shop_open){
+    ban.textContent = s.closed_message || 'Shop is closed right now.';
+    ban.style.display = 'block';
+  } else ban.style.display = 'none';
+  // Never leave the cart on a fulfilment type the shop has switched off.
+  if (FULFIL === 'pickup'   && !s.pickup_enabled)   FULFIL = 'delivery';
+  if (FULFIL === 'delivery' && !s.delivery_enabled) FULFIL = 'pickup';
+}
+
+/* ===== E5 — Order status ==================================================
+   Opened by the tracking link: #order=<id>&t=<uuid>. Reads through get_order,
+   which is token-gated — a guessed order id alone returns nothing.
+   ========================================================================= */
+const FLOW = [
+  ['placed',           'Order placed'],
+  ['confirmed',        'Confirmed by shop'],
+  ['packing',          'Being packed'],
+  ['ready',            'Ready'],
+  ['out_for_delivery', 'Out for delivery'],
+  ['delivered',        'Delivered']
+];
+const DEAD = { cancelled: 'Cancelled', rejected: 'Could not be accepted' };
+
+let trPoll = null;
+let trCur  = null;   // { id, token }
+
+function parseTrackHash(){
+  const h = String(location.hash || '').replace(/^#/, '');
+  if (!h) return null;
+  const p = {};
+  h.split('&').forEach(kv => {
+    const i = kv.indexOf('=');
+    if (i > 0) p[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1));
+  });
+  return (p.order && p.t) ? { id: p.order, token: p.t } : null;
+}
+
+async function fetchOrder(id, token){
+  const r = await fetch(SB_URL + '/rest/v1/rpc/get_order', {
+    method: 'POST',
+    headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY,
+               'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_id: id, p_token: token })
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const txt = await r.text();
+  if (!txt || txt === 'null') return null;
+  try { return JSON.parse(txt); } catch (e) { return null; }
+}
+
+function stepsHTML(status){
+  if (DEAD[status]) return '';
+  // Pickup orders never go out for delivery; drop that step.
+  const flow = FLOW.filter(f => !(f[0] === 'out_for_delivery' && trOrderIsPickup));
+  let idx = -1;
+  for (let i = 0; i < flow.length; i++) if (flow[i][0] === status) idx = i;
+  return '<div class="steps">' + flow.map((f, i) => {
+    const cls = i < idx ? 'done' : (i === idx ? 'now' : '');
+    return '<div class="st ' + cls + '"><div class="bar"></div>'
+         + '<div class="dot">' + (i <= idx ? '\u2713' : '') + '</div>'
+         + '<div class="lbl">' + escHTML(f[1]) + '</div></div>';
+  }).join('') + '</div>';
+}
+
+let trOrderIsPickup = false;
+
+function renderOrder(o){
+  const body = document.getElementById('trbody');
+  if (!o){
+    body.innerHTML = '<div class="trerr"><div class="big" style="font-size:34px">\uD83D\uDD0E</div>'
+      + '<div style="font-weight:700;color:var(--text);margin:8px 0 4px">Order not found</div>'
+      + '<div>This link may be incorrect or the order was removed. '
+      + 'Please check the link, or call the shop.</div></div>';
+    return;
+  }
+  trOrderIsPickup = o.fulfil_type === 'pickup';
+  const s = settingsOrDefault();
+  const dead = DEAD[o.status];
+  const items = Array.isArray(o.items) ? o.items : [];
+
+  body.innerHTML =
+    '<div class="trid">' + escHTML(o.id) + '</div>'
+  + '<div class="trmeta">' + escHTML(o.customer_name || '') + ' \u00B7 '
+      + (trOrderIsPickup ? 'Pickup' : 'Delivery')
+      + (o.slot ? ' \u00B7 ' + escHTML(o.slot) : '') + '</div>'
+  + '<div class="pill ' + (dead ? 'dead' : 'live') + '">'
+      + escHTML(dead || 'In progress') + '</div>'
+  + stepsHTML(o.status)
+  + (o.address ? '<div class="trsec"><h3>Delivering to</h3><div style="font-size:13px">'
+      + escHTML(o.address) + '</div></div>' : '')
+  + '<div class="trsec"><h3>Items</h3>'
+    + (items.length ? items.map(l =>
+        '<div class="trline"><div class="n">' + escHTML(l.name || '')
+        + '<div class="q">' + (Number(l.qty) || 0) + ' \u00D7 ' + money(l.price)
+        + (l.unit ? ' / ' + escHTML(l.unit) : '') + '</div></div>'
+        + '<div class="a">' + money(l.line_total) + '</div></div>').join('')
+      : '<div style="font-size:13px;color:var(--text3)">No items listed</div>')
+    + '<div class="trline" style="border:0"><div class="n"><b>Total</b></div>'
+    + '<div class="a">' + money(o.total) + '</div></div>'
+    + (Number(o.delivery_fee) > 0
+        ? '<div style="font-size:11px;color:var(--text3);text-align:right;margin-top:-4px">'
+          + 'includes ' + money(o.delivery_fee) + ' delivery</div>' : '')
+  + '</div>'
+  + (o.note ? '<div class="trsec"><h3>Your note</h3><div style="font-size:13px">'
+      + escHTML(o.note) + '</div></div>' : '')
+  + (s.shop_phone
+      ? '<a class="callbtn" href="tel:' + encodeURIComponent(s.shop_phone) + '">Call the shop</a>'
+      : '');
+}
+
+async function refreshOrder(){
+  if (!trCur) return;
+  try {
+    const o = await fetchOrder(trCur.id, trCur.token);
+    renderOrder(o);
+    // Stop polling once the order can no longer change.
+    if (o && (o.status === 'delivered' || DEAD[o.status])) stopTrackPoll();
+  } catch (e) { /* transient network — keep the last render, keep polling */ }
+}
+
+function stopTrackPoll(){ if (trPoll){ clearInterval(trPoll); trPoll = null; } }
+
+async function openTracking(id, token){
+  trCur = { id: id, token: token };
+  document.getElementById('trbody').innerHTML =
+    '<div class="trerr">Loading your order\u2026</div>';
+  document.getElementById('trwrap').style.display = 'block';
+  window.scrollTo(0, 0);
+  await refreshOrder();
+  stopTrackPoll();
+  trPoll = setInterval(refreshOrder, 30000);
+}
+
+function closeTracking(){
+  stopTrackPoll();
+  trCur = null;
+  document.getElementById('trwrap').style.display = 'none';
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+}
+
+// Don't poll a screen nobody is looking at.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopTrackPoll();
+  else if (trCur && !trPoll){ refreshOrder(); trPoll = setInterval(refreshOrder, 30000); }
+});
+
+function checkTrackHash(){
+  const t = parseTrackHash();
+  if (t) openTracking(t.id, t.token);
+}
+
+/* ---------- events ---------- */
+document.getElementById('cats').addEventListener('click', e => {
+  const b = e.target.closest('.chip');
+  if (!b) return;
+  CAT = b.getAttribute('data-cat');
+  renderCats(); renderGrid();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+let qt = null;
+const qEl = document.getElementById('q');
+const qClear = document.getElementById('qclear');
+qEl.addEventListener('input', () => {
+  Q = qEl.value;
+  qClear.style.display = Q ? 'block' : 'none';
+  clearTimeout(qt);
+  qt = setTimeout(renderGrid, 90);   // as-you-type, one frame behind the keyboard
+});
+qClear.addEventListener('click', () => {
+  qEl.value = ''; Q = ''; qClear.style.display = 'none';
+  renderGrid(); qEl.focus();
+});
+
+document.getElementById('home').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b && !b.disabled){
+    const add = b.getAttribute('data-add');
+    const inc = b.getAttribute('data-inc');
+    const dec = b.getAttribute('data-dec');
+    const cat = b.getAttribute('data-cat');
+    if (add){ setQty(add, 1); return; }
+    if (inc){ setQty(inc, (CART[inc] || 0) + 1); return; }
+    if (dec){ setQty(dec, (CART[dec] || 0) - 1); return; }
+    if (cat){ CAT = cat; renderCats(); renderGrid(); window.scrollTo({top:0,behavior:'smooth'}); return; }
+  }
+  const card = e.target.closest('[data-open]');
+  if (card) openDetail(card.getAttribute('data-open'));
+});
+
+document.getElementById('myorders').addEventListener('click', openHistory);
+document.getElementById('shopinfo').addEventListener('click', openShopInfo);
+document.getElementById('find-go').addEventListener('click', findMyOrder);
+document.getElementById('find-phone').addEventListener('input', e => {
+  e.target.value = digits10(e.target.value);
+});
+document.getElementById('iclose').addEventListener('click', closeShopInfo);
+document.getElementById('oclose').addEventListener('click', closeHistory);
+document.getElementById('olist').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const tr = b.getAttribute('data-track');
+  const ag = b.getAttribute('data-again');
+  if (ag){ orderAgain(ag); return; }
+  if (tr){
+    const rec = loadHistory().find(o => o.id === tr);
+    if (rec){ closeHistory(); openTracking(rec.id, rec.token); }
+  }
+});
+
+document.getElementById('dbg').addEventListener('click', closeDetail);
+document.getElementById('dsheet').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b || b.disabled) return;
+  const add = b.getAttribute('data-add');
+  const inc = b.getAttribute('data-inc');
+  const dec = b.getAttribute('data-dec');
+  if (add) setQty(add, 1);
+  else if (inc) setQty(inc, (CART[inc] || 0) + 1);
+  else if (dec) setQty(dec, (CART[dec] || 0) - 1);
+});
+
+document.getElementById('grid').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b || b.disabled) return;
+  const add = b.getAttribute('data-add');
+  const inc = b.getAttribute('data-inc');
+  const dec = b.getAttribute('data-dec');
+  if (add){ setQty(add, 1); return; }
+  if (inc){ setQty(inc, (CART[inc] || 0) + 1); return; }
+  if (dec){ setQty(dec, (CART[dec] || 0) - 1); return; }
+  const card = e.target.closest('[data-open]');
+  if (card) openDetail(card.getAttribute('data-open'));
+});
+
+document.getElementById('cartbar').addEventListener('click', openSheet);
+document.getElementById('sheetbg').addEventListener('click', closeSheet);
+document.getElementById('sheetclose').addEventListener('click', closeSheet);
+
+document.getElementById('sheet').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b || b.disabled) return;
+  const ful = b.getAttribute('data-ful');
+  const inc = b.getAttribute('data-inc');
+  const dec = b.getAttribute('data-dec');
+  if (ful){ FULFIL = ful; saveCart(); renderSheet(); return; }
+  if (inc){ setQty(inc, (CART[inc] || 0) + 1); return; }
+  if (dec){ setQty(dec, (CART[dec] || 0) - 1); return; }
+});
+
+document.getElementById('cta').addEventListener('click', openCheckout);
+document.getElementById('cobg').addEventListener('click', closeCheckout);
+document.getElementById('coclose').addEventListener('click', closeCheckout);
+document.getElementById('co-submit').addEventListener('click', submitOrder);
+document.getElementById('co-phone').addEventListener('input', e => {
+  e.target.value = digits10(e.target.value);
+});
+document.getElementById('ok-done').addEventListener('click', () => {
+  document.getElementById('okwrap').style.display = 'none';
+});
+document.getElementById('trclose').addEventListener('click', closeTracking);
+window.addEventListener('hashchange', () => {
+  const t = parseTrackHash();
+  if (t) openTracking(t.id, t.token); else closeTracking();
+});
+
+window.addEventListener('online',  () => load(true));
+
+if ('serviceWorker' in navigator)
+  window.addEventListener('load', () =>
+    navigator.serviceWorker.register('shop-sw.js').catch(() => {}));
+
+loadCart();
+applySettingsUI();
+renderBanner();
+renderCartBar();
+renderHistoryDot();
+load(false);
+checkTrackHash();
+</script>
+</body>
+</html>
