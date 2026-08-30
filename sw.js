@@ -1,7 +1,7 @@
 // DSB Service Worker — network-first shell, never cache Supabase data
 // CACHE_NAME includes the app version so a deploy auto-invalidates the old shell.
 // To update: change CACHE_VERSION to match APP_VERSION in index.html.
-const CACHE_VERSION = '2026-08-29-v57';
+const CACHE_VERSION = '2026-08-29-v60';
 const CACHE_NAME    = 'dsb-shell-' + CACHE_VERSION;
 
 const SHELL_ASSETS = [

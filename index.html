@@ -727,7 +727,7 @@ window.XLSX_READY = () => {
         <span style="font-size:20px;font-weight:700;color:var(--success)" id="inv-total-preview">₹0.00</span>
       </div>
     </div>
-    <button class="btn btn-primary" style="background:var(--success)" onclick="saveInvoice()">Save Invoice</button>
+    <button class="btn btn-primary" id="btn-save-invoice" style="background:var(--success)" onclick="saveInvoice()">Save Invoice</button>
   </div>
 </div>
 
@@ -939,7 +939,7 @@ window.XLSX_READY = () => {
       </div>
       <div style="font-size:11px;color:var(--text3);margin-top:4px" id="bill-gst-preview"></div>
     </div>
-    <button class="btn btn-primary" onclick="saveBill()">Save Bill</button>
+    <button class="btn btn-primary" id="btn-save-bill" onclick="saveBill()">Save Bill</button>
   </div>
 </div>
 
@@ -1249,6 +1249,7 @@ window.XLSX_READY = () => {
         <button class="btn btn-primary" style="flex:1" onclick="payFromDetail()">Record Payment</button>
         <button class="btn btn-outline" style="flex:1" onclick="editBillFromDetail()">Edit Bill</button>
       </div>
+      <button class="btn btn-outline" style="margin-top:8px;width:100%;color:var(--success);border-color:var(--success)" onclick="startNewBillFromDetail()">⚡ New Bill — Same Party</button>
       <div style="margin-top:8px;display:flex;gap:8px">
         <button class="btn btn-outline" style="flex:1" onclick="shareBillWhatsApp()">📤 WhatsApp</button>
         <button class="btn btn-outline" style="flex:1" onclick="printBillReceipt()">🖨 Print/PDF</button>
@@ -1395,7 +1396,7 @@ window.XLSX_READY = () => {
       </div>
     </div>
 
-    <button class="btn btn-primary" onclick="saveCounterSale()" style="width:100%">Save Counter Sale</button>
+    <button class="btn btn-primary" id="btn-save-counter-sale" onclick="saveCounterSale()" style="width:100%">Save Counter Sale</button>
   </div>
 </div>
 
@@ -1696,6 +1697,20 @@ const rowToExpense = r => ({ id: r.id, date: r.date, category: r.category, amoun
 // Stock adjustments: physical-count corrections. Delta entries, never absolute.
 const adjToRow = a => ({ id: a.id, date: a.date, item_key: a.itemKey||'', item_name: a.itemName||'', delta: a.delta||0, reason: a.reason||'', updated_at: a.updatedAt||0, updated_by: a.updatedBy || AUTH.userId() });
 const rowToAdj = r => ({ id: r.id, date: r.date, itemKey: r.item_key||'', itemName: r.item_name||'', delta: r.delta||0, reason: r.reason||'', updatedAt: r.updated_at||0, updatedBy: r.updated_by||'' });
+// Stock movement ledger row mappers (Phase 2a — additive audit log, see stockMovements declaration).
+const movementToRow = m => ({ id: m.id, item_id: m.itemId||'', item_name: m.itemName||'', delta: m.delta||0, reason: m.reason||'', ref_type: m.refType||'', ref_id: m.refId||'', ts: m.ts||Date.now(), updated_at: m.updatedAt||0, updated_by: m.updatedBy || AUTH.userId() });
+const rowToMovement = r => ({ id: r.id, itemId: r.item_id||'', itemName: r.item_name||'', delta: r.delta||0, reason: r.reason||'', refType: r.ref_type||'', refId: r.ref_id||'', ts: r.ts||0, updatedAt: r.updated_at||0, updatedBy: r.updated_by||'' });
+
+// Appends one row to the stock movement ledger. Additive only — never mutates
+// items[].stock itself (callers already did that; this just records what happened
+// and why). ts is the movement's own timestamp; updatedAt is the sync field.
+function logStockMovement(itemId, itemName, delta, reason, refType, refId) {
+  if (!itemId || !delta) return;
+  stockMovements.push({
+    id: genId('MOV'), itemId, itemName: itemName || '', delta, reason: reason || '',
+    refType: refType || '', refId: refId || '', ts: Date.now(), updatedAt: Date.now()
+  });
+}
 // Tombstones: track local deletions so a stale cloud copy can't resurrect them on next sync.
 // (Best-effort, device-local only — doesn't stop resurrection from a second device that
 // never learns about the delete, but that requires a server-side deletes table, out of scope here.)
@@ -1799,7 +1814,7 @@ function binRestore(table, id) {
       (rec.items || []).forEach(bi => {
         const it = bi.itemId ? items.find(i => i.id === bi.itemId)
                              : items.find(i => i.name.toLowerCase() === (bi.name || '').toLowerCase());
-        if (it) { it.stock = (it.stock || 0) + (bi.qty || 0); it.updatedAt = rec.updatedAt; }
+        if (it) { it.stock = (it.stock || 0) + (bi.qty || 0); it.updatedAt = rec.updatedAt; logStockMovement(it.id, it.name, bi.qty||0, 'Bill restored', 'bill', rec.id); }
       });
     } else if (table === 'saleInvoices') {
       (rec.items || []).forEach(ii => {
@@ -1810,6 +1825,7 @@ function binRestore(table, id) {
         const qty  = ii.isBigUnit ? (ii.qty || 0) : (conv > 0 ? (ii.qty || 0) / conv : (ii.qty || 0));
         it.stock = (it.stock || 0) - qty;
         it.updatedAt = rec.updatedAt;
+        logStockMovement(it.id, it.name, -qty, 'Invoice restored', 'saleInvoice', rec.id);
       });
     }
 
@@ -1963,6 +1979,7 @@ async function fullSync() {
       sb.upsert('sale_payments',_dirty(salePayments).map(salePayToRow)).catch(()=>{}),
       sb.upsert('expenses',     _dirty(expenses).map(expenseToRow)).catch(()=>{}),
       sb.upsert('stock_adjustments', _dirty(stockAdjustments).map(adjToRow)).catch(()=>{}),
+      sb.upsert('stock_movements', _dirty(stockMovements).map(movementToRow)).catch(()=>{}),
     ]);
 
     // ── STEP 1: pull everything from Supabase ──────────────────
@@ -1973,13 +1990,13 @@ async function fullSync() {
       try { return { ok: true, rows: await sb.select(name) }; }
       catch (e) { return { ok: false, rows: [] }; }
     };
-    const [rb, rp, ri, ry, rc, rsi, rsp, rex, radj] = await Promise.all([
+    const [rb, rp, ri, ry, rc, rsi, rsp, rex, radj, rmov] = await Promise.all([
       _pull('bills'), _pull('parties'), _pull('items'), _pull('payments'),
       _pull('customers'), _pull('sale_invoices'), _pull('sale_payments'),
-      _pull('expenses'), _pull('stock_adjustments')
+      _pull('expenses'), _pull('stock_adjustments'), _pull('stock_movements')
     ]);
     const pb = rb.rows, pp = rp.rows, pi = ri.rows, py = ry.rows, pc = rc.rows,
-          psi = rsi.rows, psp = rsp.rows, pex = rex.rows, padj = radj.rows;
+          psi = rsi.rows, psp = rsp.rows, pex = rex.rows, padj = radj.rows, pmov = rmov.rows;
 
     // If the core tables could not be read at all we are effectively offline.
     // Aborting here is safer than merging against a phantom empty cloud.
@@ -1998,6 +2015,7 @@ async function fullSync() {
     salePayments = mergeById(salePayments, psp.map(rowToSalePay), syncStart, rsp.ok);
     expenses = mergeById(expenses, pex.map(rowToExpense), syncStart, rex.ok);
     stockAdjustments = mergeById(stockAdjustments, padj.map(rowToAdj), syncStart, radj.ok);
+    stockMovements = mergeById(stockMovements, pmov.map(rowToMovement), syncStart, rmov.ok);
 
     // ── STEP 3: push the merged state back up ──────────────────
     // A table whose pull FAILED must never be pushed: its local copy was merged
@@ -2014,6 +2032,7 @@ async function fullSync() {
       [rsp.ok,  'sale_payments',     salePayments,     salePayToRow],
       [rex.ok,  'expenses',          expenses,         expenseToRow],
       [radj.ok, 'stock_adjustments', stockAdjustments, adjToRow],
+      [rmov.ok, 'stock_movements',   stockMovements,   movementToRow],
     ];
     const _allPulled = _pushPlan.every(p => p[0]);
     await Promise.all(_pushPlan.map(([ok, table, arr, mapper]) =>
@@ -2065,13 +2084,14 @@ function startAutoSync() {
       if (_pushPending || _salesPending) await flushOutbox();
 
       // 2. Pull from cloud and merge
-      const [pb, pp, pi, py, pc, psi, psp, pex, padj] = await Promise.all([
+      const [pb, pp, pi, py, pc, psi, psp, pex, padj, pmov] = await Promise.all([
         sb.select('bills'), sb.select('parties'), sb.select('items'), sb.select('payments'),
         sb.select('customers'), sb.select('sale_invoices'), sb.select('sale_payments'),
-        sb.select('expenses').catch(()=>[]), sb.select('stock_adjustments').catch(()=>[])
+        sb.select('expenses').catch(()=>[]), sb.select('stock_adjustments').catch(()=>[]),
+        sb.select('stock_movements').catch(()=>[])
       ]);
       const _snap = arr => arr.map(x => x.id + '|' + (x.updatedAt||0)).sort().join(',');
-      const before = [bills,parties,items,payments,saleInvoices,salePayments,expenses,customers,stockAdjustments].map(_snap).join('||');
+      const before = [bills,parties,items,payments,saleInvoices,salePayments,expenses,customers,stockAdjustments,stockMovements].map(_snap).join('||');
       bills        = mergeById(bills,        pb.map(rowToBill));
       parties      = mergeById(parties,      pp.map(rowToParty));
       items        = mergeById(items,        pi.map(rowToItem));
@@ -2081,7 +2101,8 @@ function startAutoSync() {
       salePayments = mergeById(salePayments, psp.map(rowToSalePay));
       expenses     = mergeById(expenses,     pex.map(rowToExpense));
       stockAdjustments = mergeById(stockAdjustments, padj.map(rowToAdj));
-      const after  = [bills,parties,items,payments,saleInvoices,salePayments,expenses,customers,stockAdjustments].map(_snap).join('||');
+      stockMovements    = mergeById(stockMovements, pmov.map(rowToMovement));
+      const after  = [bills,parties,items,payments,saleInvoices,salePayments,expenses,customers,stockAdjustments,stockMovements].map(_snap).join('||');
       _lastFullSync = Date.now();
       _syncFailCount = 0; _syncBackoffUntil = 0; // success — clear backoff
       if (before !== after) {
@@ -2208,6 +2229,7 @@ async function flushOutbox() {
         salePayments.length ? sb.upsert('sale_payments', salePayments.map(salePayToRow))   : Promise.resolve(),
         expenses.length     ? sb.upsert('expenses',      expenses.map(expenseToRow))        : Promise.resolve(),
         stockAdjustments.length ? sb.upsert('stock_adjustments', stockAdjustments.map(adjToRow)) : Promise.resolve(),
+        stockMovements.length   ? sb.upsert('stock_movements',   stockMovements.map(movementToRow)) : Promise.resolve(),
       ]);
       await pushPendingTombstoneDeletes();
       _pushPending = false;
@@ -2350,6 +2372,13 @@ let items = DB.get('items') || [];
 let payments = DB.get('payments') || [];
 let recurringLog = DB.get('recurringLog') || [];
 let stockAdjustments = DB.get('stockAdjustments') || [];
+// Append-only audit ledger — logs the effect of every it.stock mutation without
+// changing any existing mutation's math. Phase 2a (additive, non-authoritative):
+// items[].stock remains the real source of truth for now. Once this ledger has
+// run long enough to be trusted, Phase 2b makes it authoritative and removes the
+// direct `it.stock =` writes one at a time. Never write to items[].stock from a
+// reconciliation of this log during 2a — that would be circular.
+let stockMovements = DB.get('stockMovements') || [];
 let customers = DB.get('customers') || [];
 let saleInvoices = DB.get('saleInvoices') || [];
 let salePayments = DB.get('salePayments') || [];
@@ -2360,7 +2389,7 @@ function save() {
   DB.set('payments', payments); DB.set('recurringLog', recurringLog);
   DB.set('stockAdjustments', stockAdjustments); DB.set('customers', customers);
   DB.set('saleInvoices', saleInvoices); DB.set('salePayments', salePayments);
-  DB.set('expenses', expenses);
+  DB.set('expenses', expenses); DB.set('stockMovements', stockMovements);
 }
 
 // Seed demo only if truly empty
@@ -2433,6 +2462,9 @@ function migrateStockFromBillHistory() {
       it.updatedAt = Date.now();
     });
   });
+  // NOTE: this one-time backfill does NOT call logStockMovement — it reconstructs
+  // stock from bill history that will separately get movement rows going forward.
+  // Logging here would double-count the same quantities in the ledger.
   stockAdjustments.forEach(adj => {
     const it = items.find(i => i.name.toLowerCase().trim() === adj.itemKey);
     if (it) { it.stock = (it.stock || 0) + adj.delta; it.updatedAt = Date.now(); }
@@ -3458,6 +3490,20 @@ function openNewBillModal() {
   openModal('modal-new-bill');
 }
 
+// Quick-entry shortcut from an existing bill's detail view. The common real case
+// is several bills entered back-to-back for the same supplier during one delivery
+// — this skips backing out to the dashboard/Bills tab and re-picking the party.
+function startNewBillFromDetail() {
+  const b = bills.find(x => x.id === currentDetailBillId);
+  closeModal('modal-bill-detail');
+  openNewBillModal();
+  if (b) {
+    const partyInput = document.getElementById('bill-party');
+    if (partyInput) partyInput.value = b.party;
+    renderPartyRecentItems(b.party);
+  }
+}
+
 function renderPayPartyChips() {
   const container = document.getElementById('pay-party-chips');
   if (!container) return;
@@ -3545,7 +3591,28 @@ function selectPartyChip(idx) {
   renderPartyRecentItems(name);
 }
 
+// Outer guard for the double-submit/double-tap case. saveBill() itself is fully
+// synchronous (pushToCloud() is fire-and-forget, not awaited), so a boolean
+// in-flight flag alone would NOT block a rapid double-tap — both queued click
+// handlers would run back-to-back with nothing async in between to interleave,
+// and a try/finally flag would already be cleared before the second one checks
+// it. The only reliable fix for a synchronous handler is disabling the actual
+// button element before any of the real work runs, re-enabling on every early
+// return. Wrapping (rather than editing every return inside the original body)
+// avoids the exact failure mode from this session: manually re-threading a
+// guard through a dozen early-return branches is how lines get dropped.
 function saveBill() {
+  const btn = document.getElementById('btn-save-bill');
+  if (btn && btn.disabled) return; // already mid-save — swallow the second tap
+  if (btn) btn.disabled = true;
+  try {
+    _saveBillInner();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function _saveBillInner() {
   const party = document.getElementById('bill-party').value.trim();
   const date = document.getElementById('bill-date').value;
   const payType = document.getElementById('bill-payment-type').value;
@@ -3696,7 +3763,7 @@ function saveBill() {
         const it = bi.itemId
           ? items.find(i => i.id === bi.itemId)
           : items.find(i => i.name.toLowerCase() === (bi.name||'').toLowerCase());
-        if (it) { it.stock = (it.stock || 0) - bi.qty; it.updatedAt = Date.now(); }
+        if (it) { it.stock = (it.stock || 0) - bi.qty; it.updatedAt = Date.now(); logStockMovement(it.id, it.name, -bi.qty, 'Bill edited (reversed old qty)', 'bill', editingBillId); }
       });
     }
   }
@@ -3705,7 +3772,7 @@ function saveBill() {
     const it = bi.itemId
       ? items.find(i => i.id === bi.itemId)
       : items.find(i => i.name.toLowerCase() === (bi.name||'').toLowerCase());
-    if (it) { it.stock = (it.stock || 0) + bi.qty; it.updatedAt = Date.now(); }
+    if (it) { it.stock = (it.stock || 0) + bi.qty; it.updatedAt = Date.now(); logStockMovement(it.id, it.name, bi.qty, editingBillId ? 'Bill edited (applied new qty)' : 'Purchase bill', 'bill', editingBillId || '(new)'); }
   });
 
 
@@ -3764,7 +3831,7 @@ function deleteBillFromDetail() {
       const it = bi.itemId
         ? items.find(i => i.id === bi.itemId)
         : items.find(i => i.name.toLowerCase() === (bi.name||'').toLowerCase());
-      if (it) { it.stock = (it.stock || 0) - bi.qty; it.updatedAt = Date.now(); }
+      if (it) { it.stock = (it.stock || 0) - bi.qty; it.updatedAt = Date.now(); logStockMovement(it.id, it.name, -bi.qty, 'Bill deleted', 'bill', billId); }
     });
     const orphanedPaymentIds = payments.filter(p => p.billId === billId).map(p => p.id);
     const orphanedPayments = payments.filter(p => p.billId === billId);
@@ -6213,6 +6280,7 @@ function saveStockAdjustment() {
   if (masterIt) {
     masterIt.stock = actual;
     masterIt.updatedAt = Date.now();
+    logStockMovement(masterIt.id, masterIt.name, delta, reason || (delta > 0 ? 'Stock found' : 'Stock shortage'), 'adjustment', currentItemId);
   }
   save(); pushToCloud();
   closeModal('modal-stock-adjust');
@@ -6476,6 +6544,7 @@ async function importEntrySheet(input) {
       }
       master.stock = (master.stock||0) + i.qty;
       master.updatedAt = Date.now();
+      logStockMovement(master.id, master.name, i.qty, 'Entry sheet import', 'bill', b.tempId || '(import)');
       const itemGst = master.gst || 0;
       const sub = i.qty * i.rate;
       const afterDisc = sub * (1 - (i.disc||0)/100);
@@ -6606,6 +6675,7 @@ async function importExcel(input) {
       it.stock = (it.stock||0) + (bi.qty||0);
       it.wholesale = bi.rate || it.wholesale;
       it.updatedAt = Date.now();
+      logStockMovement(it.id, it.name, bi.qty||0, 'Excel import', 'bill', billId);
     });
     imported++;
   });
@@ -7269,6 +7339,7 @@ async function saveBatchBills() {
       }
       it.stock = (it.stock || 0) + i.qty;
       it.updatedAt = Date.now();
+      logStockMovement(it.id, it.name, i.qty, 'Batch bill entry', 'bill', '(batch)');
       const itemGst = it.gst || 0;
       const sub = i.qty * i.rate;
       const total = Math.round(sub + sub * itemGst / 100);
@@ -8122,9 +8193,11 @@ function saveReturn() {
     if (master) {
       if (_returnType === 'purchase') {
         master.stock = (master.stock||0) - ri.qty;
+        logStockMovement(master.id, master.name, -ri.qty, 'Purchase return', 'return', _returnSourceId);
       } else {
         const bigEquiv = calcBigEquiv(ri, master);
         master.stock = (master.stock||0) + bigEquiv;
+        logStockMovement(master.id, master.name, bigEquiv, 'Sale return', 'return', _returnSourceId);
       }
       master.updatedAt = Date.now();
     }
@@ -9500,7 +9573,19 @@ function csCalcTotal() {
   document.getElementById('cs-total').textContent = '₹' + fmt(total);
 }
 
+// Same rationale as saveBill/saveInvoice above.
 function saveCounterSale() {
+  const btn = document.getElementById('btn-save-counter-sale');
+  if (btn && btn.disabled) return;
+  if (btn) btn.disabled = true;
+  try {
+    _saveCounterSaleInner();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function _saveCounterSaleInner() {
   const date     = document.getElementById('cs-date').value || today();
   const payType  = document.getElementById('cs-payment').value;
   const custInput= document.getElementById('cs-customer').value.trim();
@@ -9553,6 +9638,7 @@ function saveCounterSale() {
       if (newStock < 0) shortfalls.push(`${it.name} (${(-newStock).toFixed(1)} short)`);
       it.stock = newStock;
       it.updatedAt = Date.now();
+      logStockMovement(it.id, it.name, -bigEquiv, 'Counter sale', 'saleInvoice', '(counter)');
     }
   });
   if (shortfalls.length && !confirm(`⚠ Stock short: ${shortfalls.join(', ')}\n\nSave anyway?`)) return;
@@ -9591,7 +9677,21 @@ function resetInvoiceForm() {
   invItemCount = 0; invExtraCount = 0; editingInvoiceId = null;
 }
 
+// Same rationale as saveBill's wrapper above — saveInvoice() is synchronous end
+// to end, so only disabling the actual button element (not a boolean flag)
+// reliably blocks a rapid double-tap double-submit.
 function saveInvoice() {
+  const btn = document.getElementById('btn-save-invoice');
+  if (btn && btn.disabled) return;
+  if (btn) btn.disabled = true;
+  try {
+    _saveInvoiceInner();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function _saveInvoiceInner() {
   const customerName = document.getElementById('inv-customer').value.trim();
   const date = document.getElementById('inv-date').value;
   const payType = document.getElementById('inv-payment-type').value;
@@ -9674,6 +9774,7 @@ function saveInvoice() {
         const bigEquiv = calcBigEquiv(ii, it);
         it.stock = (it.stock || 0) + bigEquiv;
         it.updatedAt = Date.now();
+        logStockMovement(it.id, it.name, bigEquiv, 'Invoice edited (reversed old qty)', 'saleInvoice', editingInvoiceId);
       }
     });
   }
@@ -9688,6 +9789,7 @@ function saveInvoice() {
       if (newStock < 0) stockShortfalls.push(`${it.name} (${(-newStock).toFixed(2)} ${it.bigUnit||'units'} short)`);
       it.stock = newStock;
       it.updatedAt = Date.now();
+      logStockMovement(it.id, it.name, -bigEquiv, editingInvoiceId ? 'Invoice edited (applied new qty)' : 'Sale invoice', 'saleInvoice', editingInvoiceId || '(new)');
     }
   });
   if (stockShortfalls.length) toast('⚠ Stock short: ' + stockShortfalls.join(', '));
@@ -9774,6 +9876,7 @@ function deleteInvoiceFromDetail() {
         const bigEquiv = calcBigEquiv(ii, it);
         it.stock = (it.stock||0) + bigEquiv;
         it.updatedAt = Date.now();
+        logStockMovement(it.id, it.name, bigEquiv, 'Invoice deleted', 'saleInvoice', id);
       }
     });
     const orphanPayIds = salePayments.filter(p=>p.invoiceId===id).map(p=>p.id);
@@ -10208,7 +10311,7 @@ document.getElementById('bill-items-container').addEventListener('input', e => {
 // Network-first for the app shell (fresh when online, usable when not).
 // Data calls (Supabase /rest/) are never cached — they bypass the SW entirely.
 // On version bump the SW cache is invalidated automatically via CACHE_NAME.
-const APP_VERSION = '2026-08-29-v57';
+const APP_VERSION = '2026-08-29-v60';
 localStorage.setItem('dsb_app_version', APP_VERSION);
 
 if ('serviceWorker' in navigator) {
